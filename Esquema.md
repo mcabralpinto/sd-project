@@ -53,10 +53,10 @@
 
 ### Functions used by Gateway
     T[^data] pedeInfoPerdida(String)
+    [^data]: Dados a serem sincronizados
     Array<String> queryWord(String, Int[^pages])
+    [^pages] número da página de URLs (cada página tem 1o URLs)
 
 ### Other Functions
     void retriveFormFile()
     
-[^data]: Dados a serem sincronizados
-[^pages] número da página de URLs (cada página tem 1o URLs)
