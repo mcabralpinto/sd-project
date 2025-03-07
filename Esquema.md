@@ -21,11 +21,11 @@
     void receiveIndex(String, Array<String>)
 
 ### Functions used by Barrels
-    T[^data] receiveLostData(Barrel)
+    T receiveLostData(Barrel)
 
 
 ### Functions used by Clients
-    Array<String> queryWord(String, Int[^pages])
+    Array<String> queryWord(String, Int)
 
 ## Client
 
@@ -52,11 +52,10 @@
     HashMap<String, Array<String>> children
 
 ### Functions used by Gateway
-    T[^data] pedeInfoPerdida(String)
-    [^data]: Dados a serem sincronizados
-    Array<String> queryWord(String, Int[^pages])
-    [^pages] número da página de URLs (cada página tem 1o URLs)
+    T pedeInfoPerdida(String)
+    Array<String> queryWord(String, Int)
 
 ### Other Functions
     void retriveFormFile()
     
+T é suposto ser informação dos barrels
