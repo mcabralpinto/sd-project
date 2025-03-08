@@ -38,12 +38,12 @@ public class GatewayBarrels extends UnicastRemoteObject implements InterfaceGate
 				barrelsNZ.replace(barrel, 1);
 		}
 
-		public void acknoledge(BarrelAM barrel, int clock) throws RemoteException{
+		public void acknowledgeUpdate(BarrelAM barrel, int clock) throws RemoteException{
 				if (barrelsAM.containsKey(barrel)){
 						barrelsAM.replace(barrel, clock);
 				}
 		}
-		public void acknoledge(BarrelNZ barrel, int clock) throws RemoteException{
+		public void acknowledgeUpdate(BarrelNZ barrel, int clock) throws RemoteException{
 				if (barrelsNZ.containsKey(barrel)){
 						barrelsNZ.replace(barrel, clock);
 				}
