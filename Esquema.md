@@ -3,16 +3,17 @@
 ### Data structures
     Set<Client> clients
     Set<Downloader> downloaders
-    Set<Barrel> barrels
+    Set<BarrelAM, Integer> barrelsAM
+    Set<BarrelNZ, Integer> barrelsNZ
     Queue<String> urls  (thread safe)
-    HashMap<Barrel, Set<String>> lostInfo
     Set<Pair<Int, String>> mostLookedUpWord
     Set<Pair<Int, String>> mostLookedUpURL
 
 ### Subscribe function for all classes
     void subscribe(Client)
     void subscribe(Downloader)
-    void subscribe(Barrel)
+    void subscribe(BarrelAM)
+    void subscribe(BarrelNZ)
 
 ### Functions used by downloaders
     String takeURL()
@@ -21,8 +22,12 @@
     void receiveIndex(String, Array<String>)
 
 ### Functions used by Barrels
-    T receiveLostData(Barrel)
-
+    acknoledge(BarrelAM, int) 
+    acknoledge(BarrelNZ, int) 
+    queryResponse(ArrayList<String>, BarrelAM, int)
+    queryResponse(ArrayList<String>, BarrelNZ, int)
+    syncResponse(Map<String, Set<String>>, Map<String, Set<String>>, BarrelAM, int)
+    syncResponse(Map<String, Set<String>>, Map<String, Set<String>>, BarrelNZ, int)
 
 ### Functions used by Clients
     Array<String> queryWord(String, Int)
@@ -48,14 +53,12 @@
     Gateway gateway
     HashMap<String, Set<String>> recIndex
     HashMap<String, Set<String>> parents
-    HashMap<String, Array<String>> index
-    HashMap<String, Array<String>> children
 
 ### Functions used by Gateway
-    T pedeInfoPerdida(String)
-    Array<String> queryWord(String, Int)
+    void syncRequest()
+    void queryWord(String, Int)
+    void update(Pair<String, ArrayList<String>>, Pair<String, ArrayList<String>>, int)
 
 ### Other Functions
     void retriveFormFile()
     
-T é suposto ser informação dos barrels
