@@ -8,15 +8,19 @@ import java.io.*;
 import java.util.*;
 
 public class GatewayBarrels extends UnicastRemoteObject implements InterfaceGatewayBarrels {
-		private Map<BarrelAM, Integer> barrelsAM;
-		private Map<BarrelNZ, Integer> barrelsNZ;
-		private Set<PairRespostaPalavra> buffer;
+		private boolean nextAM;
+		private Map<Barrel, PairClockFlag> barrels;
+		private Set<PairBarrelClock> bufferACK;
+		private Map<PairBarrelClock, ArrayList<String>> bufferPals;
+		private Map<PairBarrelClock, PairIndRecParents> bufferSync;
 
-		public GatewayBarrels() throws RemoteException{
+		GatewayBarrels() throws RemoteException{
 				super();
-				barrelsAM = Collections.synchronizedMap(new HashMap<BarrelAM, Integer>());
-				barrelsNZ = Collections.synchronizedMap(new HashMap<BarrelNZ, Integer>());
-				buffer = Collections.synchronizedSet(new HashSet<PairRespostaPalavra>());
+				nextAM = true;
+				barrels = Collections.synchronizedMap(new HashMap<Barrel, PairClockFlag>());
+				bufferACK = Collections.synchronizedSet(new HashSet<PairBarrelClock>());
+				bufferPals = Collections.synchronizedMap(new HashMap<PairBarrelClock, ArrayList<String>>());
+				bufferSync = Collections.synchronizedMap(new HashMap<PairBarrelClock, PairIndRecParents>());
 		}
 
     public static void main(String args[]) {
@@ -30,48 +34,26 @@ public class GatewayBarrels extends UnicastRemoteObject implements InterfaceGate
         }
     }
 
-		public void subscribe(BarrelAM barrel){
-				barrelsAM.replace(barrel, 1);
+		synchronized public void subscribe(Barrel barrel){
+				if (barrels.containsKey(barrel)) return;
+				if (nextAM){
+						barrels.replace(barrel, new PairClockFlag(1, 0));
+				}else{
+						barrels.replace(barrel, new PairClockFlag(1, 2));
+				}
+				nextAM = !nextAM;
 		}
 
-		public void subscribe(BarrelNZ barrel){
-				barrelsNZ.replace(barrel, 1);
+		public void acknowledgeUpdate(Barrel barrel, int clock) throws RemoteException{
+				bufferACK.add(new PairBarrelClock(barrel, clock));
 		}
 
-		public void acknowledgeUpdate(BarrelAM barrel, int clock) throws RemoteException{
-				if (barrelsAM.containsKey(barrel)){
-						barrelsAM.replace(barrel, clock);
-				}
-		}
-		public void acknowledgeUpdate(BarrelNZ barrel, int clock) throws RemoteException{
-				if (barrelsNZ.containsKey(barrel)){
-						barrelsNZ.replace(barrel, clock);
-				}
+		public void queryResponse(ArrayList<String> top10, Barrel barrel, int clock) throws RemoteException{
+				bufferPals.put(new PairBarrelClock(barrel, clock), top10);
 		}
 
-		public void queryResponse(ArrayList<String> top10, BarrelAM barrel, int clock) throws RemoteException{
-				if (barrelsAM.containsKey(barrel)){
-						barrelsAM.replace(barrel, clock);
-				}
-				buffer.add(new PairRespostaPalavra(top10, clock));
+		public void syncResponse(Map<String, Set<String>> indRec, Map<String, Set<String>> parents, Barrel barrel, int clock) throws RemoteException{
+				bufferSync.put(new PairBarrelClock(barrel, clock), new PairIndRecParents(indRec, parents));
 		}
 
-		public void queryResponse(ArrayList<String> top10, BarrelNZ barrel, int clock) throws RemoteException{
-				if (barrelsNZ.containsKey(barrel)){
-						barrelsNZ.replace(barrel, clock);
-				}
-				buffer.add(new PairRespostaPalavra(top10, clock));
-		}
-
-		public void syncResponse(Map<String, Set<String>> indRec, Map<String, Set<String>> parents, BarrelAM barrel, int clock) throws RemoteException{
-				if (barrelsAM.containsKey(barrel)){
-						barrelsAM.replace(barrel, clock);
-				}
-		}
-
-		public void syncResponse(Map<String, Set<String>> indRec, Map<String, Set<String>> parents, BarrelNZ barrel, int clock) throws RemoteException{
-				if (barrelsNZ.containsKey(barrel)){
-						barrelsNZ.replace(barrel, clock);
-				}
-		}
 }
