@@ -17,6 +17,7 @@ public class Client {
                 Scanner scanner = new Scanner(System.in);
                 String input = scanner.nextLine();
                 index.handleRequest(input);
+                scanner.close();
             }
         } catch (RemoteException | NotBoundException e) {
             e.printStackTrace();
