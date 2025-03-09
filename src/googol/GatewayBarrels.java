@@ -17,10 +17,10 @@ public class GatewayBarrels extends UnicastRemoteObject implements InterfaceGate
 		GatewayBarrels() throws RemoteException{
 				super();
 				nextAM = true;
-				barrels = Collections.synchronizedMap(new HashMap<Barrel, PairClockFlag>());
+				barrels = new ConcurrentHashMap<Barrel, PairClockFlag>();
 				bufferACK = Collections.synchronizedSet(new HashSet<PairBarrelClock>());
-				bufferPals = Collections.synchronizedMap(new HashMap<PairBarrelClock, ArrayList<String>>());
-				bufferSync = Collections.synchronizedMap(new HashMap<PairBarrelClock, PairIndRecParents>());
+				bufferPals = new ConcurrentHashMap<PairBarrelClock, ArrayList<String>>();
+				bufferSync = new ConcurrentHashMap<PairBarrelClock, PairIndRecParents>();
 		}
 
     public static void main(String args[]) {
@@ -46,14 +46,72 @@ public class GatewayBarrels extends UnicastRemoteObject implements InterfaceGate
 
 		public void acknowledgeUpdate(Barrel barrel, int clock) throws RemoteException{
 				bufferACK.add(new PairBarrelClock(barrel, clock));
+				notify();
 		}
 
 		public void queryResponse(ArrayList<String> top10, Barrel barrel, int clock) throws RemoteException{
 				bufferPals.put(new PairBarrelClock(barrel, clock), top10);
+				notify();
 		}
 
 		public void syncResponse(Map<String, Set<String>> indRec, Map<String, Set<String>> parents, Barrel barrel, int clock) throws RemoteException{
 				bufferSync.put(new PairBarrelClock(barrel, clock), new PairIndRecParents(indRec, parents));
+				notify();
 		}
 
+		private PairIndRecParents sendSyncQuery(int tries, long timeout, Barrel curBarrel, int curClock){
+				PairBarrelClock expected = new PairBarrelClock(curBarrel, curClock);
+				PairIndRecParents answer = null;
+				while (tries > 0){
+						tries--;
+						//curBarrel.syncQuery(curClock);
+						long maxTime = System.currentTimeMillis() + timeout;
+						long curTime = System.currentTimeMillis();
+						while (bufferSync.get(expected) == null && maxTime - curTime > 0){
+								try{
+										wait(maxTime - curTime);
+								}catch (InterruptedException e){
+										e.printStackTrace();	
+								}
+								curTime = System.currentTimeMillis();
+						}
+						answer = bufferSync.get(expected);
+						if (answer != null) break;
+				}
+				return answer;
+		}
+
+		public void synchronize(int tries, long timeout){
+				Barrel barrelAMSynched = null, barrelNZSynched = null;
+				boolean stopFlag = false;
+				for (Map.Entry<Barrel, PairClockFlag> barrel: barrels.entrySet()){
+						if (barrel.getValue().flag == 1){
+								barrelAMSynched = barrel.getKey();
+								if (stopFlag) break;
+								stopFlag = true;
+						}else if (barrel.getValue().flag == 3){
+								barrelNZSynched = barrel.getKey();
+								if (stopFlag) break;
+								stopFlag = true;
+						}
+				}
+				if (barrelAMSynched == null && barrelNZSynched == null){
+						Map<Barrel, PairClockFlag> shallowBarrels = new HashMap<Barrel, PairClockFlag>();
+						shallowBarrels.putAll(barrels);
+						for (Map.Entry<Barrel, PairClockFlag> sourceBarrel: shallowBarrels.entrySet()){
+								boolean isAM;
+								Barrel curBarrel = sourceBarrel.getKey();
+								PairClockFlag value = sourceBarrel.getValue();
+								int curFlag = value.flag;
+								if (curFlag < 2) isAM = true;
+								else isAM = false;
+								int curClock = barrels.get(value).clock.incrementAndGet();
+								PairIndRecParents answer = this.sendSyncQuery(tries, timeout, curBarrel, curClock);	
+								if (answer == null){
+										System.out.println("Sync Query to Barrel failed");
+								}else{
+										
+						}				
+				}
+		}
 }
