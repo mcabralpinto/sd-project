@@ -17,7 +17,6 @@ public class Robot {
                 StringTokenizer st = new StringTokenizer(doc.text(), " ,.!?:;");
                 while (st.hasMoreElements())
                     index.addToIndex(st.nextToken().toLowerCase(), url);
-
                 Elements links = doc.select("a[href]");
                 for (Element link : links) {
                     String foundUrl = link.attr("abs:href");

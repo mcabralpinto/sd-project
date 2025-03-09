@@ -1,8 +1,9 @@
 package googol;
 
-import java.rmi.*;
-import java.rmi.registry.*;
-import java.util.*;
+import java.rmi.NotBoundException;
+import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.util.Scanner;
 
 public class Client {
 
@@ -11,10 +12,9 @@ public class Client {
     public static void main(String args[]) {
         try {
             Index index = (Index) LocateRegistry.getRegistry(8183).lookup("index");
-
-            Scanner scanner = new Scanner(System.in);
             while (true) {
                 System.out.println("Enter an URL or search word:");
+                Scanner scanner = new Scanner(System.in);
                 String input = scanner.nextLine();
                 index.handleRequest(input);
             }
