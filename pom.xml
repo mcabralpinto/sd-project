@@ -21,4 +21,9 @@
             <version>1.18.3</version>
         </dependency>
     </dependencies>
-</project> 
+
+    <build>
+        <sourceDirectory>src</sourceDirectory>
+        <testSourceDirectory>src/test/java</testSourceDirectory>
+    </build>
+</project>
