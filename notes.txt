@@ -1,1 +1,2 @@
 não recompilar para mudar IP. passar como parametro de entrada ou num java properties
+Como paralelizar envio de mensagens para os vários barrels
