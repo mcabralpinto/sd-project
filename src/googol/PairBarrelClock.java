@@ -1,10 +1,15 @@
 package googol;
 
+/**
+ * Classe que guarda um Barrel e um valor de Stamp de comunicação
+ * @author Joao Nuno Coelho
+ * @version 1.0
+ */
 class PairBarrelClock{
 		Barrel barrel;
-		int clock;
+		long clock;
 
-		PairBarrelClock(Barrel barrel, int clock){
+		PairBarrelClock(Barrel barrel, long clock){
 				this.barrel =  barrel;
 				this.clock = clock;
 		}

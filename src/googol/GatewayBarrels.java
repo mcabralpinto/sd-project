@@ -4,9 +4,7 @@ import java.rmi.*;
 import java.rmi.server.*;
 import java.rmi.registry.*;
 import java.util.concurrent.*;
-import java.io.*;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Classe que implementa um Gateway que gere apenas as funcionalidade dos Barrels
@@ -55,7 +53,7 @@ public class GatewayBarrels extends UnicastRemoteObject implements InterfaceGate
 				nextAM = !nextAM;
 		}
 
-		public void acknowledgeUpdate(Barrel barrel, int clock) throws RemoteException{
+		public void updateAndSyncAcknowledge(Barrel barrel, long clock) throws RemoteException{
 				PairBarrelClock message = new PairBarrelClock(barrel, clock);
 				if (sendBuffer.contains(message)){
 						sendBuffer.remove(message);
@@ -64,7 +62,7 @@ public class GatewayBarrels extends UnicastRemoteObject implements InterfaceGate
 				}
 		}
 
-		public void queryResponse(ArrayList<String> top10, Barrel barrel, int clock) throws RemoteException{
+		public void wordAnswer(ArrayList<String> top10, Barrel barrel, long clock) throws RemoteException{
 				PairBarrelClock message = new PairBarrelClock(barrel, clock);
 				if (sendBuffer.contains(message)){
 						sendBuffer.remove(message);
@@ -73,7 +71,7 @@ public class GatewayBarrels extends UnicastRemoteObject implements InterfaceGate
 				}
 		}
 
-		public void syncResponse(Map<String, Set<String>> indRec, Map<String, Set<String>> parents, Barrel barrel, int clock) throws RemoteException{
+		public void syncRequestAnswer(Map<String, Set<String>> indRec, Map<String, Set<String>> parents, Barrel barrel, long clock) throws RemoteException{
 				PairBarrelClock message = new PairBarrelClock(barrel, clock);
 				if (sendBuffer.contains(message)){
 						sendBuffer.remove(message);
@@ -90,7 +88,7 @@ public class GatewayBarrels extends UnicastRemoteObject implements InterfaceGate
 		 * @param curBarrel Barrel com quem será feita a comunicação
 		 * @param curClock Stamp da comunicação
 		 */
-		private PairIndRecParents sendSyncQuery(int tries, long timeout, Barrel curBarrel, int curClock){
+		private PairIndRecParents sendSyncQuery(int tries, long timeout, Barrel curBarrel, long curClock){
 				PairBarrelClock expected = new PairBarrelClock(curBarrel, curClock);
 				PairIndRecParents answer = null;
 				while (tries > 0){
@@ -124,7 +122,7 @@ public class GatewayBarrels extends UnicastRemoteObject implements InterfaceGate
 		 * @param curBarrel Barrel com que será feita a comunicação
 		 * @param curClock Stamp da comunicação
 		 */
-		private boolean sendSyncAnswer(int tries, long timeout, Barrel curBarrel, int curClock, PairIndRecParents answer){
+		private boolean sendSyncAnswer(int tries, long timeout, Barrel curBarrel, long curClock, PairIndRecParents answer){
 				PairBarrelClock expected = new PairBarrelClock(curBarrel, curClock);
 				while (tries > 0){
 						tries--;
@@ -162,7 +160,7 @@ public class GatewayBarrels extends UnicastRemoteObject implements InterfaceGate
 				PairIndRecParents answerAM = null, answerNZ = null;
 				Map<Barrel, PairClockFlag> shallowBarrels = new HashMap<Barrel, PairClockFlag>();
 				shallowBarrels.putAll(barrels);
-				int curClock;
+				long curClock;
 				boolean ack;
 				for (Map.Entry<Barrel, PairClockFlag> pair: shallowBarrels.entrySet()){
 						Barrel barrel = pair.getKey();
@@ -170,10 +168,10 @@ public class GatewayBarrels extends UnicastRemoteObject implements InterfaceGate
 						value.clock.set(0);
 						if (value.flag == 1 && answerAM == null){
 								curClock = barrels.get(barrel).clock.incrementAndGet();
-								answerAM = this.sendSyncQuery(tries, timeout, barrel, curClock);	
+								answerAM = this.sendSyncQuery(tries, timeout, barrel, curClock-1);	
 						}else if (value.flag == 3 && answerNZ == null){
 								curClock = barrels.get(barrel).clock.incrementAndGet();
-								answerNZ = this.sendSyncQuery(tries, timeout, barrel, curClock);	
+								answerNZ = this.sendSyncQuery(tries, timeout, barrel, curClock-1);	
 						}
 				}
 				int amCount = 0, nzCount = 0;
@@ -184,7 +182,7 @@ public class GatewayBarrels extends UnicastRemoteObject implements InterfaceGate
 						PairClockFlag value = sourcePair.getValue();
 						if ((value.flag == 0 && answerAM == null) || (value.flag == 2 && answerNZ == null)){
 								curClock = barrels.get(sourceBarrel).clock.incrementAndGet();
-								PairIndRecParents answer = this.sendSyncQuery(tries, timeout, sourceBarrel, curClock);	
+								PairIndRecParents answer = this.sendSyncQuery(tries, timeout, sourceBarrel, curClock-1);
 								if (value.flag == 0) amCount++;
 								else nzCount++;
 								if (answer != null){
@@ -192,7 +190,7 @@ public class GatewayBarrels extends UnicastRemoteObject implements InterfaceGate
 												Barrel destBarrel = destPair.getKey();
 												if (destPair != sourcePair && destPair.getValue().flag == value.flag){
 														curClock = barrels.get(destBarrel).clock.incrementAndGet();
-														ack = this.sendSyncAnswer(tries, timeout, destBarrel, curClock, answer);
+														ack = this.sendSyncAnswer(tries, timeout, destBarrel, curClock-1, answer);
 														if (!ack) System.out.println("Sync Data to Barrel failed");
 														else barrels.get(destBarrel).clock.incrementAndGet();
 												}
@@ -205,8 +203,8 @@ public class GatewayBarrels extends UnicastRemoteObject implements InterfaceGate
 								}
 						}else if ((value.flag == 0 && answerAM != null) || (value.flag == 2 && answerNZ != null)){
 								curClock = barrels.get(sourceBarrel).clock.incrementAndGet();
-								if (value.flag == 0) ack = this.sendSyncAnswer(tries, timeout, sourceBarrel, curClock, answerAM);
-								else ack = this.sendSyncAnswer(tries, timeout, sourceBarrel, curClock, answerNZ);
+								if (value.flag == 0) ack = this.sendSyncAnswer(tries, timeout, sourceBarrel, curClock-1, answerAM);
+								else ack = this.sendSyncAnswer(tries, timeout, sourceBarrel, curClock-1, answerNZ);
 								if (!ack) System.out.println("Sync Data to Barrel failed");
 								else barrels.get(sourceBarrel).flag = value.flag + 1;
 						}								

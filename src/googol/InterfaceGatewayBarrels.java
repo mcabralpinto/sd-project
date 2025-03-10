@@ -22,7 +22,7 @@ public interface InterfaceGatewayBarrels extends Remote {
 		 * @param clock Stamp da mensagem
 		 * @throws RemoteException
 		 */
-		void acknowledgeUpdate(Barrel barrel, int clock) throws RemoteException;
+		void updateAndSyncAcknowledge(Barrel barrel, long clock) throws RemoteException;
 		/**
 		 * Método, a ser usado por barrels, que envia a resposta à gateway do pedido que esta fez sobre uma palavra
 		 * @param top10 Resposta do barrel, top10 sites mais importantes envolvendo a palavra do pedido
@@ -30,7 +30,7 @@ public interface InterfaceGatewayBarrels extends Remote {
 		 * @param clock Stamp da mensagem
 		 * @throws RemoteException
 		 */
-		void queryResponse(ArrayList<String> top10, Barrel barrel, int clock) throws RemoteException;
+		void wordAnswer(ArrayList<String> top10, Barrel barrel, long clock) throws RemoteException;
 		/**
 		 * Método, a ser usado por barrels, que envia a resposta à gateway do pedido que esta fez para sincronizar barrels
 		 * @param indRec Indice recursivo do barrel
@@ -39,5 +39,5 @@ public interface InterfaceGatewayBarrels extends Remote {
 		 * @param clock Stamp da mensagem
 		 * @throws RemoteException
 		 */
-		void syncResponse(Map<String, Set<String>> indRec, Map<String, Set<String>> parents, Barrel barrel, int clock) throws RemoteException;
+		void syncRequestAnswer(Map<String, Set<String>> indRec, Map<String, Set<String>> parents, Barrel barrel, long clock) throws RemoteException;
 }
